@@ -1,0 +1,13 @@
+# WordPress specific ignores
+wp-config.php
+/wp-content/uploads/
+/wp-content/upgrade/
+/wp-content/backup-db/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Log and temp files
+*.log
+debug.log
