@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// All non-API web traffic routes directly to the React application shell
+Route::get('/{any}', function () {
+    return view('app');
+})->where('any', '.*');
