@@ -1,8 +1,21 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, ArrowRight, Database, Server } from 'lucide-react';
+import axios from 'axios';
+import { ArrowRight, Database, Server, Terminal } from 'lucide-react';
 
 export default function Home() {
+  const [caseStudies, setCaseStudies] = useState([]);
+
+  useEffect(() => {
+    axios.get('/api/content/white-papers?published=1')
+      .then(response => {
+        setCaseStudies(response.data);
+      })
+      .catch(error => {
+        console.error('Error fetching case studies:', error);
+      });
+  }, []);
+
   return (
     <div className="space-y-16">
       <section className="space-y-6 max-w-3xl">
@@ -43,6 +56,31 @@ export default function Home() {
           <p className="text-sm text-slate-400">Containerized sandboxes, custom scrapers, and headless transactional engines.</p>
         </div>
       </section>
+
+      <div className="mt-16">
+        <h2 className="text-2xl font-bold mb-4">Featured White Papers / Case Studies</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {caseStudies.map(caseStudy => (
+            <div key={caseStudy.id} className="bg-white rounded-lg shadow-md p-6">
+              <h3 className="text-xl font-bold mb-2">{caseStudy.title}</h3>
+              <p className="text-gray-600 mb-4">{caseStudy.summary}</p>
+              <Link to={`/work/${caseStudy.slug}`} className="text-blue-500 hover:underline">
+                Read More
+              </Link>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-16 text-center">
+        <h2 className="text-2xl font-bold mb-4">Conversion Callout</h2>
+        <p className="text-lg mb-4">
+          Ready to take the next step? Contact us today!
+        </p>
+        <Link to="/contact" className="bg-blue-500 text-white px-6 py-3 rounded hover:bg-blue-600">
+          Get a Quote
+        </Link>
+      </div>
     </div>
   );
 }
