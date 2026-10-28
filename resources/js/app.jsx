@@ -1,5 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import AuthProvider from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import PublicLayout from './components/PublicLayout';
 import PublicNav from './components/PublicNav';
@@ -14,29 +16,33 @@ import Work from './pages/Work';
 import Services from './pages/Services';
 import Products from './pages/Products';
 import Contact from './pages/Contact';
+import Login from './pages/Admin/Login';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<PublicLayout />}>
-          <Route index element={<Home />} />
-          <Route path="work" element={<Work />} />
-          <Route path="services" element={<Services />} />
-          <Route path="products" element={<Products />} />
-          <Route path="contact" element={<Contact />} />
-          <Route path="*" element={<div className="text-center py-20 font-mono text-slate-500">404 // ROUTE_NOT_FOUND</div>} />
-        </Route>
-        <Route path="admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboard />} />
-            <Route path="schemas" element={<SchemaBuilder />} />
-            <Route path="entries/:schemaSlug" element={<EntryList />} />
-            <Route path="entries/:schemaSlug/new" element={<EntryEditor />} />
-            <Route path="entries/:schemaSlug/:id" element={<EntryEditor />} />
-            <Route path="leads" element={<LeadList />} />
-            <Route path="dynamic-content" element={<DynamicContent />} />
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<PublicLayout />}>
+            <Route index element={<Home />} />
+            <Route path="work" element={<Work />} />
+            <Route path="services" element={<Services />} />
+            <Route path="products" element={<Products />} />
+            <Route path="contact" element={<Contact />} />
+            <Route path="*" element={<div className="text-center py-20 font-mono text-slate-500">404 // ROUTE_NOT_FOUND</div>} />
           </Route>
-      </Routes>
-    </BrowserRouter>
+          <Route path="/admin/login" element={<Login />} />
+          <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="schemas" element={<SchemaBuilder />} />
+              <Route path="entries/:schemaSlug" element={<EntryList />} />
+              <Route path="entries/:schemaSlug/new" element={<EntryEditor />} />
+              <Route path="entries/:schemaSlug/:id" element={<EntryEditor />} />
+              <Route path="leads" element={<LeadList />} />
+              <Route path="dynamic-content" element={<DynamicContent />} />
+            </Route>
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
