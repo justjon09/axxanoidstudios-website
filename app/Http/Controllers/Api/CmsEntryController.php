@@ -7,6 +7,7 @@ use App\Models\CmsEntry;
 use App\Models\CmsSchema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class CmsEntryController extends Controller
 {
@@ -14,24 +15,38 @@ class CmsEntryController extends Controller
     {
         $schema = CmsSchema::where('slug', $schemaSlug)->firstOrFail();
 
-        $query = CmsEntry::where('schema_id', $schema->id);
+        $query = CmsEntry::where('schema_id', $schema->id)->orderBy('updated_at', 'desc');
 
         if (request()->has('published')) {
-            $query->where('is_published', request('published') === '1' ? true : false);
+            $query->where('is_published', request('published') === '1');
         }
 
-        return $query->get();
+        return response()->json($query->get());
+    }
+
+    public function showAdmin(string $id)
+    {
+        $entry = CmsEntry::with(['schema.fields', 'revisions'])->findOrFail($id);
+        return response()->json($entry);
     }
 
     public function store(Request $request, string $schemaSlug)
     {
         $schema = CmsSchema::with('fields')->where('slug', $schemaSlug)->firstOrFail();
 
+        $payload = $request->all();
+        if (empty($payload['slug']) && !empty($payload['title'])) {
+            $payload['slug'] = Str::slug($payload['title']);
+        }
+        if (!isset($payload['data']) || !is_array($payload['data'])) {
+            $payload['data'] = [];
+        }
+
         $rules = [
-            'title' => 'required|string',
-            'slug' => 'required|string|unique:cms_entries,slug,NULL,id,schema_id,' . $schema->id,
+            'title' => 'required|string|max:255',
+            'slug' => 'required|string|max:255|unique:cms_entries,slug,NULL,id,schema_id,' . $schema->id,
             'is_published' => 'boolean',
-            'data' => 'required|array',
+            'data' => 'present|array',
             'data.main_body' => 'nullable|string',
         ];
 
@@ -39,7 +54,7 @@ class CmsEntryController extends Controller
             $rules['data.' . $field->handle] = $field->validation_rules ? $field->validation_rules : 'nullable';
         }
 
-        $validator = Validator::make($request->all(), $rules);
+        $validator = Validator::make($payload, $rules);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
@@ -47,10 +62,10 @@ class CmsEntryController extends Controller
 
         $entry = CmsEntry::create([
             'schema_id' => $schema->id,
-            'title' => $request->title,
-            'slug' => $request->slug,
-            'data' => $request->input('data'),
-            'is_published' => $request->has('is_published') ? $request->is_published : false,
+            'title' => $payload['title'],
+            'slug' => $payload['slug'],
+            'data' => $payload['data'],
+            'is_published' => (bool) ($payload['is_published'] ?? false),
             'author_id' => $request->user()?->id,
         ]);
 
@@ -60,9 +75,11 @@ class CmsEntryController extends Controller
     public function show(string $schemaSlug, string $entrySlug)
     {
         $schema = CmsSchema::where('slug', $schemaSlug)->firstOrFail();
-        $entry = CmsEntry::where('schema_id', $schema->id)->where('slug', $entrySlug)->firstOrFail();
+        $entry = CmsEntry::where('schema_id', $schema->id)
+            ->where('slug', $entrySlug)
+            ->firstOrFail();
 
-        return $entry;
+        return response()->json($entry);
     }
 
     public function update(Request $request, string $id)
@@ -70,10 +87,15 @@ class CmsEntryController extends Controller
         $entry = CmsEntry::findOrFail($id);
         $schema = CmsSchema::with('fields')->findOrFail($entry->schema_id);
 
+        $payload = $request->all();
+        if (isset($payload['title']) && empty($payload['slug'])) {
+            $payload['slug'] = Str::slug($payload['title']);
+        }
+
         $rules = [
-            'title' => 'sometimes|required|string',
-            'slug' => 'sometimes|required|string|unique:cms_entries,slug,' . $id . ',id,schema_id,' . $schema->id,
-            'is_published' => 'sometimes|required|boolean',
+            'title' => 'sometimes|required|string|max:255',
+            'slug' => 'sometimes|required|string|max:255|unique:cms_entries,slug,' . $id . ',id,schema_id,' . $schema->id,
+            'is_published' => 'sometimes|boolean',
             'data' => 'sometimes|array',
             'data.main_body' => 'nullable|string',
         ];
@@ -82,15 +104,20 @@ class CmsEntryController extends Controller
             $rules['data.' . $field->handle] = $field->validation_rules ? $field->validation_rules : 'nullable';
         }
 
-        $validator = Validator::make($request->all(), $rules);
+        $validator = Validator::make($payload, $rules);
 
         if ($validator->fails()) {
             return response()->json($validator->errors(), 422);
         }
 
-        $entry->update($request->all());
+        $entry->update([
+            'title' => $payload['title'] ?? $entry->title,
+            'slug' => $payload['slug'] ?? $entry->slug,
+            'data' => $payload['data'] ?? $entry->data,
+            'is_published' => isset($payload['is_published']) ? (bool) $payload['is_published'] : $entry->is_published,
+        ]);
 
-        return response()->json($entry);
+        return response()->json($entry->fresh(['revisions']));
     }
 
     public function destroy(string $id)

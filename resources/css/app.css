@@ -1,3 +1,20 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --bg-base: #020617;
+  --bg-surface: #0f172a;
+  --border-subtle: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-muted: #94a3b8;
+  --accent-sky: #38bdf8;
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}

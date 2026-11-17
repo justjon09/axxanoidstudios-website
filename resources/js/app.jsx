@@ -33,12 +33,6 @@ export default function App() {
           </Route>
           <Route path="/admin/login" element={<Login />} />
 
-
-
-
-
-
-
           <Route path="/admin" element={<ProtectedRoute />}>
             <Route element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
