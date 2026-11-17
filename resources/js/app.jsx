@@ -1,6 +1,6 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import AuthProvider from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminLayout from './components/AdminLayout';
 import PublicLayout from './components/PublicLayout';
@@ -32,7 +32,15 @@ export default function App() {
             <Route path="*" element={<div className="text-center py-20 font-mono text-slate-500">404 // ROUTE_NOT_FOUND</div>} />
           </Route>
           <Route path="/admin/login" element={<Login />} />
-          <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+
+
+
+
+
+
+
+          <Route path="/admin" element={<ProtectedRoute />}>
+            <Route element={<AdminLayout />}>
               <Route index element={<AdminDashboard />} />
               <Route path="schemas" element={<SchemaBuilder />} />
               <Route path="entries/:schemaSlug" element={<EntryList />} />
@@ -41,6 +49,7 @@ export default function App() {
               <Route path="leads" element={<LeadList />} />
               <Route path="dynamic-content" element={<DynamicContent />} />
             </Route>
+          </Route>
         </Routes>
       </BrowserRouter>
     </AuthProvider>

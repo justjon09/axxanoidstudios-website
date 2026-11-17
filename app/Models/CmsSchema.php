@@ -2,15 +2,41 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class CmsSchema extends Model
 {
-    use HasFactory;
-
     protected $table = 'cms_schemas';
-    protected $fillable = ['name', 'slug', 'description', 'icon', 'is_public'];
+
+    protected $fillable = [
+        'name',
+        'slug',
+        'description',
+        'icon',
+        'is_public'
+    ];
+
+    protected $casts = [
+        'is_public' => 'boolean'
+    ];
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($schema) {
+            if (empty($schema->slug) && !empty($schema->name)) {
+                $schema->slug = Str::slug($schema->name);
+            }
+        });
+
+        static::updating(function ($schema) {
+            if (empty($schema->slug) && !empty($schema->name)) {
+                $schema->slug = Str::slug($schema->name);
+            }
+        });
+    }
 
     public function fields()
     {

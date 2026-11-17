@@ -7,57 +7,60 @@ use App\Models\CmsField;
 use App\Models\CmsSchema;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class CmsSchemaController extends Controller
 {
     public function index()
     {
-        return CmsSchema::with('fields')->get();
+        return response()->json(CmsSchema::all());
     }
 
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string',
-            'slug' => 'required|string|unique:cms_schemas,slug',
-            'description' => 'required|string',
-            'icon' => 'required|string',
-            'is_public' => 'required|boolean',
+        $validatedData = $request->validate([
+            'name' => 'required|string|max:100',
+            'slug' => 'nullable|string|max:100|unique:cms_schemas,slug',
+            'description' => 'nullable|string',
+            'icon' => 'nullable|string|max:50',
+            'is_public' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $schema = CmsSchema::create($request->all());
-
+        $schema = CmsSchema::create($validatedData);
         return response()->json($schema, 201);
     }
 
     public function show($id)
     {
-        return CmsSchema::with('fields')->findOrFail($id);
+        $schema = CmsSchema::findOrFail($id);
+        $schema->load('fields');
+        return response()->json($schema);
     }
 
     public function update(Request $request, $id)
     {
         $schema = CmsSchema::findOrFail($id);
 
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string',
-            'slug' => 'sometimes|required|string|unique:cms_schemas,slug,' . $id,
-            'description' => 'sometimes|required|string',
-            'icon' => 'sometimes|required|string',
-            'is_public' => 'sometimes|required|boolean',
+        $validatedData = $request->validate([
+            'name' => 'sometimes|required|string|max:100',
+            'slug' => 'sometimes|required|string|max:100|unique:cms_schemas,slug,' . $id,
+            'description' => 'nullable|string',
+            'icon' => 'nullable|string|max:50',
+            'is_public' => 'boolean',
         ]);
 
-        if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
-        }
-
-        $schema->update($request->all());
+        $schema->update($validatedData);
 
         return response()->json($schema);
+    }
+
+    public function destroy($id)
+    {
+        $schema = CmsSchema::findOrFail($id);
+        $schema->delete();
+
+        return response()->json(null, 204);
     }
 
     public function addField(Request $request, $id)
